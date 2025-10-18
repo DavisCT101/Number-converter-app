@@ -1,0 +1,599 @@
+from flask import Flask, request, jsonify
+import webbrowser
+import threading
+import time
+
+app = Flask(_name_)
+
+def open_browser():
+    time.sleep(1.5)
+    webbrowser.open('http://127.0.0.1:5000')
+
+def get_converter_page():
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NumConvert - Number System Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 25px;
+        }
+
+        .label {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            display: block;
+        }
+
+        .base-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .base-button {
+            padding: 12px 8px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .base-button:hover {
+            background: #e0e0e0;
+        }
+
+        .base-button.selected {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #2196F3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .button-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .button {
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .convert-button {
+            background: #2196F3;
+            color: white;
+        }
+
+        .convert-button:hover {
+            background: #1976D2;
+        }
+
+        .clear-button {
+            background: #ff4444;
+            color: white;
+        }
+
+        .clear-button:hover {
+            background: #cc0000;
+        }
+
+        .results-container {
+            padding: 25px;
+            background: #f8f9fa;
+            margin: 0 25px 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .results-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #333;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 500;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .result-value {
+            font-weight: bold;
+            color: #2196F3;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 0 25px 25px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .instructions-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #1976d2;
+            font-size: 1.1em;
+        }
+
+        .instruction {
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 25px;
+            border-left: 4px solid #f44336;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">NumConvert</div>
+            <div class="subtitle">Number System Converter</div>
+        </div>
+
+        <div class="error-message" id="error-message"></div>
+
+        <div class="form-container">
+            <label class="label">Select Input Type:</label>
+            <div class="base-selector" id="base-selector">
+                <div class="base-button" data-base="2">Binary</div>
+                <div class="base-button" data-base="8">Octal</div>
+                <div class="base-button selected" data-base="10">Decimal</div>
+                <div class="base-button" data-base="16">Hex</div>
+            </div>
+
+            <label class="label" id="input-label">Enter decimal number:</label>
+            <input type="text" class="text-input" id="number-input" placeholder="Enter decimal number..." autocomplete="off">
+
+            <div class="button-container">
+                <button class="button convert-button" id="convert-btn">Convert</button>
+                <button class="button clear-button" id="clear-btn">Clear</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div class="results-title">Conversion Results</div>
+            <div class="result-item">
+                <span class="result-label">Decimal:</span>
+                <span class="result-value" id="decimal-result">---</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Binary:</span>
+                <span class="result-value" id="binary-result">---</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Octal:</span>
+                <span class="result-value" id="octal-result">---</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Hexadecimal:</span>
+                <span class="result-value" id="hex-result">---</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <div class="instructions-title">How to Use:</div>
+            <div class="instruction">1. Select input number type (Binary, Octal, Decimal, Hex)</div>
+            <div class="instruction">2. Enter your number in the selected base</div>
+            <div class="instruction">3. Click "Convert" to see all conversions</div>
+            <div class="instruction">4. Use "Clear" to reset everything</div>
+            <br>
+            <div class="instructions-title">Examples to Try:</div>
+            <div class="instruction">• Decimal: 255 → Binary: 11111111, Hex: FF</div>
+            <div class="instruction">• Binary: 1010 → Decimal: 10, Octal: 12</div>
+            <div class="instruction">• Hex: FF → Decimal: 255, Binary: 11111111</div>
+        </div>
+    </div>
+
+    <script>
+        // Number Converter Class
+        class NumberConverter {
+            static toDecimal(value, fromBase) {
+                if (!value || value === '-') return '';
+                
+                // Remove any spaces from input
+                value = value.replace(/\s/g, '');
+                const isNegative = value.startsWith('-');
+                const absValue = isNegative ? value.slice(1) : value;
+                
+                if (absValue.trim() === '') return '';
+                
+                try {
+                    const decimal = parseInt(absValue, fromBase);
+                    if (isNaN(decimal)) throw new Error('Invalid number format');
+                    return isNegative ? -${decimal} : decimal.toString();
+                } catch (error) {
+                    throw new Error(Invalid ${this.getBaseName(fromBase)} number format);
+                }
+            }
+
+            static fromDecimal(decimalValue, toBase) {
+                if (!decimalValue || decimalValue === '-') return '';
+                
+                const isNegative = decimalValue.startsWith('-');
+                const absValue = isNegative ? decimalValue.slice(1) : decimalValue;
+                
+                if (absValue.trim() === '') return '';
+                
+                try {
+                    const decimal = parseInt(absValue, 10);
+                    if (isNaN(decimal)) throw new Error('Invalid decimal number');
+                    
+                    // Handle zero case
+                    if (decimal === 0) return '0';
+                    
+                    let result;
+                    switch (toBase) {
+                        case 2:
+                            result = decimal.toString(2);
+                            break;
+                        case 8:
+                            result = decimal.toString(8);
+                            break;
+                        case 16:
+                            result = decimal.toString(16).toUpperCase();
+                            break;
+                        default:
+                            result = decimal.toString();
+                    }
+                    
+                    return isNegative ? -${result} : result;
+                } catch (error) {
+                    throw new Error('Invalid decimal number');
+                }
+            }
+
+            static convert(value, fromBase, toBase) {
+                if (fromBase === toBase) return value;
+                if (!value || value === '-') return '';
+                
+                try {
+                    const decimal = this.toDecimal(value, fromBase);
+                    return this.fromDecimal(decimal, toBase);
+                } catch (error) {
+                    throw error;
+                }
+            }
+
+            static getBaseName(base) {
+                const names = { 
+                    2: 'binary', 
+                    8: 'octal', 
+                    10: 'decimal', 
+                    16: 'hexadecimal' 
+                };
+                return names[base] || 'unknown';
+            }
+
+            static validateInput(value, base) {
+                if (!value || value === '-') return true;
+                
+                // Remove spaces for validation
+                value = value.replace(/\s/g, '');
+                
+                const regexPatterns = {
+                    2: /^-?[01]+$/,
+                    8: /^-?[0-7]+$/,
+                    10: /^-?[0-9]+$/,
+                    16: /^-?[0-9A-Fa-f]+$/
+                };
+                
+                return regexPatterns[base].test(value);
+            }
+        }
+
+        // DOM Elements
+        const baseButtons = document.querySelectorAll('.base-button');
+        const numberInput = document.getElementById('number-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const inputLabel = document.getElementById('input-label');
+        const errorMessage = document.getElementById('error-message');
+
+        // Result elements
+        const decimalResult = document.getElementById('decimal-result');
+        const binaryResult = document.getElementById('binary-result');
+        const octalResult = document.getElementById('octal-result');
+        const hexResult = document.getElementById('hex-result');
+
+        // Current selected base
+        let selectedBase = 10;
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Hide error message
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Update input label and placeholder based on selected base
+        function updateInputLabel() {
+            const baseName = NumberConverter.getBaseName(selectedBase);
+            inputLabel.textContent = Enter ${baseName} number:;
+            numberInput.placeholder = Enter ${baseName} number...;
+            
+            // Set input type and pattern based on base
+            if (selectedBase === 16) {
+                numberInput.setAttribute('inputmode', 'text');
+            } else {
+                numberInput.setAttribute('inputmode', 'numeric');
+            }
+        }
+
+        // Base selection event listeners
+        baseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove selected class from all buttons
+                baseButtons.forEach(btn => btn.classList.remove('selected'));
+                
+                // Add selected class to clicked button
+                button.classList.add('selected');
+                
+                // Update selected base
+                selectedBase = parseInt(button.dataset.base);
+                
+                // Update input label and placeholder
+                updateInputLabel();
+                
+                // Clear any previous results and errors
+                clearResults();
+                hideError();
+                
+                // Focus on input field
+                numberInput.focus();
+            });
+        });
+
+        // Convert button event listener
+        convertBtn.addEventListener('click', performConversion);
+
+        // Clear button event listener
+        clearBtn.addEventListener('click', () => {
+            numberInput.value = '';
+            clearResults();
+            hideError();
+            numberInput.focus();
+        });
+
+        // Enter key support
+        numberInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performConversion();
+            }
+        });
+
+        // Real-time input validation
+        numberInput.addEventListener('input', (e) => {
+            hideError();
+        });
+
+        // Perform the conversion
+        function performConversion() {
+            const inputValue = numberInput.value.trim();
+            
+            // Check if input is empty
+            if (!inputValue) {
+                showError('Please enter a number to convert');
+                return;
+            }
+
+            // Validate input
+            if (!NumberConverter.validateInput(inputValue, selectedBase)) {
+                const baseName = NumberConverter.getBaseName(selectedBase);
+                showError(Invalid ${baseName} number. Please check your input.);
+                return;
+            }
+
+            try {
+                // Perform conversions
+                const decimal = NumberConverter.convert(inputValue, selectedBase, 10);
+                const binary = NumberConverter.convert(inputValue, selectedBase, 2);
+                const octal = NumberConverter.convert(inputValue, selectedBase, 8);
+                const hexadecimal = NumberConverter.convert(inputValue, selectedBase, 16);
+
+                // Display results
+                decimalResult.textContent = decimal || '---';
+                binaryResult.textContent = binary || '---';
+                octalResult.textContent = octal || '---';
+                hexResult.textContent = hexadecimal || '---';
+
+                hideError();
+
+            } catch (error) {
+                showError('Conversion error: ' + error.message);
+            }
+        }
+
+        // Clear all results
+        function clearResults() {
+            decimalResult.textContent = '---';
+            binaryResult.textContent = '---';
+            octalResult.textContent = '---';
+            hexResult.textContent = '---';
+        }
+
+        // Initialize the app
+        function initApp() {
+            updateInputLabel();
+            numberInput.focus();
+            
+            // Add some example values for quick testing
+            console.log('NumConvert App Started!');
+            console.log('Try these examples:');
+            console.log('- Decimal: 255');
+            console.log('- Binary: 11111111');
+            console.log('- Hex: FF');
+        }
+
+        // Start the app when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
+    """
+
+@app.route('/')
+def index():
+    return get_converter_page()
+
+@app.route('/convert', methods=['POST'])
+def convert_number():
+    try:
+        data = request.get_json()
+        input_type = data.get('type')
+        input_value = data.get('value')
+        
+        if not input_type or not input_value:
+            return jsonify({'error': 'Missing type or value'}), 400
+        
+        # Convert to decimal first
+        if input_type == 'binary':
+            decimal_value = int(input_value, 2)
+        elif input_type == 'octal':
+            decimal_value = int(input_value, 8)
+        elif input_type == 'decimal':
+            decimal_value = int(input_value)
+        elif input_type == 'hex':
+            decimal_value = int(input_value, 16)
+        else:
+            return jsonify({'error': 'Invalid number type'}), 400
+        
+        # Convert to all bases
+        results = {
+            'decimal': str(decimal_value),
+            'binary': bin(decimal_value)[2:],
+            'octal': oct(decimal_value)[2:],
+            'hex': hex(decimal_value)[2:].upper()
+        }
+        
+        return jsonify(results)
+    
+    except ValueError as e:
+        return jsonify({'error': 'Invalid number format'}), 400
+    except Exception as e:
+        return jsonify({'error': 'Conversion error'}), 500
+
+if _name_ == '_main_':
+    # Auto-open browser
+    threading.Thread(target=open_browser).start()
+    print("Opening browser automatically...")
+    print("If browser doesn't open, manually go to: http://127.0.0.1:5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)
